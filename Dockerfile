@@ -1,11 +1,9 @@
-# ---------- build stage ----------
 FROM maven:3.6.3-jdk-8 AS build
 WORKDIR /app
 COPY . .
 ARG APP_MODULE=web
-RUN mvn -q -DskipTests -pl ${APP_MODULE} -am clean package
+RUN mvn -DskipTests -pl ${APP_MODULE} -am clean package
 
-# ---------- run stage ----------
 FROM eclipse-temurin:8-jre
 WORKDIR /app
 ARG APP_MODULE=web
