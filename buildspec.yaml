@@ -1,0 +1,32 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "us-east-1"
+    REPO_URI: "479699168596.dkr.ecr.us-east-1.amazonaws.com/springboot-app"
+    IMAGE_TAG: "latest"
+    APP_MODULE: "web"   # change to: service / email-app / etc. (the module that builds the runnable boot jar)
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin 479699168596.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - echo "Repo: ${REPO_URI}"
+      - echo "Module: ${APP_MODULE}"
+
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build --build-arg APP_MODULE=${APP_MODULE} -t springboot-app:${IMAGE_TAG} .
+      - docker tag springboot-app:${IMAGE_TAG} ${REPO_URI}:${IMAGE_TAG}
+
+  post_build:
+    commands:
+      - echo "Pushing Docker image to ECR..."
+      - docker push ${REPO_URI}:${IMAGE_TAG}
+      - printf '[{"name":"app","imageUri":"%s"}]' ${REPO_URI}:${IMAGE_TAG} > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
